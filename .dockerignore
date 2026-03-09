@@ -1,0 +1,46 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.coverage
+htmlcov
+.tox
+.mypy_cache
+.env
+.venv
+venv
+env
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Local
+.DS_Store
+*.log
+*.db
+*.sqlite3
+README.md
+
+# Docker
+docker-compose.yml
+.dockerignore
+Dockerfile
+
+# Development
+tests/
+docs/
+examples/
+*.md
+LICENSE
