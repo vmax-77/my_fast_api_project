@@ -63,3 +63,57 @@ curl "http://localhost:8000/links/myalias/stats"
 ```bash
 curl "http://localhost:8000/links/search?original_url=example.com"
 ```
+
+## Аутентификация
+
+### Регистрация
+```bash
+curl -X POST "http://localhost:8000/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "username": "username",
+    "password": "password123"
+  }'
+  ```
+
+### Получение токена
+  ```bash
+curl -X POST "http://localhost:8000/auth/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=username&password=password123"
+  ```
+
+
+### Создание ссылки (с авторизацией)
+```bash
+curl -X POST "http://localhost:8000/links/shorten" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "original_url": "https://example.com",
+    "custom_alias": "myalias"
+  }'
+  ```
+
+  ## База данных
+
+### Таблица users
+- id (PRIMARY KEY)
+- email (UNIQUE)
+- username (UNIQUE)
+- hashed_password
+- is_active
+- created_at
+
+### Таблица links
+- id (PRIMARY KEY)
+- original_url
+- short_code (UNIQUE)
+- custom_alias (UNIQUE, NULLABLE)
+- clicks
+- created_at
+- expires_at (NULLABLE)
+- last_accessed (NULLABLE)
+- is_active
+- user_id (FOREIGN KEY REFERENCES users.id)
