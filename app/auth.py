@@ -1,8 +1,7 @@
-# app/auth.py
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -10,18 +9,24 @@ from app import models, schemas
 from app.database import get_db
 from app.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    password_bytes = plain_password.encode('utf-8')[:72]
+    hashed_bytes = hashed_password.encode('utf-8')
+    return bcrypt.checkpw(password_bytes, hashed_bytes)
 
-def get_password_hash(password):
-    return pwd_context.hash(password)
+def get_password_hash(password: str) -> str:
+    password_bytes = password.encode('utf-8')[:72]
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(password_bytes, salt)
+    return hashed.decode('utf-8')
 
 def authenticate_user(db: Session, username: str, password: str):
     user = db.query(models.User).filter(models.User.username == username).first()
-    if not user or not verify_password(password, user.hashed_password):
+    if not user:
+        return False
+    if not verify_password(password, user.hashed_password):
         return False
     return user
 
@@ -59,11 +64,19 @@ async def get_current_active_user(current_user: schemas.UserResponse = Depends(g
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
-from fastapi.security import OAuth2PasswordBearer
-from fastapi import Request
+async def get_current_user_optional(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            return None
+        user = db.query(models.User).filter(models.User.username == username).first()
+        return user
+    except:
+        return None
 
 class OAuth2PasswordBearerOptional(OAuth2PasswordBearer):
-    async def __call__(self, request: Request = None):
+    async def __call__(self, request = None):
         try:
             return await super().__call__(request)
         except:
